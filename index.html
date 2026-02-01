@@ -54,6 +54,7 @@ body {
   position: absolute;
   left: 60%;
   white-space: nowrap;
+  /* Smooth transition for movement */
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -106,7 +107,6 @@ function initAudio() {
 }
 
 function playRomanticSong() {
-  // A warm, romantic melody that starts after "Yes"
   const melody = [
     { f: 349.23, d: 0.6, t: 0 },   // F4
     { f: 440.00, d: 0.6, t: 0.6 }, // A4
@@ -122,14 +122,11 @@ function playRomanticSong() {
     const gain = audioCtx.createGain();
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTime);
-    
     gain.gain.setValueAtTime(0, audioCtx.currentTime + startTime);
     gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + startTime + 0.1);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + startTime + duration);
-    
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    
     osc.start(audioCtx.currentTime + startTime);
     osc.stop(audioCtx.currentTime + startTime + duration);
   };
@@ -254,10 +251,9 @@ function setupUI(){
   const card=document.getElementById("card");
 
   yes.onclick=()=>{
-    initAudio(); // Initialize audio on user interaction
+    initAudio(); 
     isAccepted=true;
     
-    // Play sound and loop
     playCelebrationChime();
     playRomanticSong();
     
@@ -279,25 +275,39 @@ function setupUI(){
 
   const moveNo = (e) => {
     if(isAccepted) return;
-    const r=no.getBoundingClientRect();
+    const r = no.getBoundingClientRect();
     const mouseX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
     const mouseY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    const dx=mouseX-(r.left+r.width/2);
-    const dy=mouseY-(r.top+r.height/2);
     
-    if(Math.hypot(dx,dy)<120){
-      const padding = 50;
-      const newX = Math.random() * (window.innerWidth - r.width - padding * 2) + padding;
-      const newY = Math.random() * (window.innerHeight - r.height - padding * 2) + padding;
+    // Position of button center
+    const btnCenterX = r.left + r.width / 2;
+    const btnCenterY = r.top + r.height / 2;
+    
+    const distance = Math.hypot(mouseX - btnCenterX, mouseY - btnCenterY);
+    
+    // When the cursor is near the button
+    if(distance < 110){
+      const margin = 20; // Safety margin from screen edge
+      
+      // Calculate max bounds
+      const maxX = window.innerWidth - r.width - margin;
+      const maxY = window.innerHeight - r.height - margin;
+      
+      // Generate new random position strictly within visible area
+      let newX = Math.random() * (maxX - margin) + margin;
+      let newY = Math.random() * (maxY - margin) + margin;
+      
       no.style.position = "fixed";
       no.style.left = newX + "px";
       no.style.top = newY + "px";
       no.style.margin = "0";
+      no.style.zIndex = "100"; // Ensure it stays on top
     }
   };
 
   window.addEventListener("mousemove", moveNo);
-  window.addEventListener("touchstart", moveNo);
+  window.addEventListener("touchstart", moveNo, {passive: false});
+  window.addEventListener("touchmove", moveNo, {passive: false});
 }
 
 window.onresize=()=>{
